@@ -32,7 +32,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                 <>
                   <Link
                     href={item.href || "#"}
-                    className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-fill)] focus:ring-offset-2 rounded px-1"
+                    className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] rounded px-1"
                   >
                     {item.label}
                   </Link>

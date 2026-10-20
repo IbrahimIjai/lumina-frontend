@@ -64,7 +64,7 @@ export default function LocaleSwitcher() {
         value={currentLocale}
         onChange={handleChange}
         aria-label="Select language"
-        className="appearance-none rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-raised)] pl-8 pr-7 py-1.5 font-medium shadow-sm transition hover:border-[var(--color-accent-fill)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-fill)] cursor-pointer text-[var(--color-text-primary)]"
+        className="appearance-none rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-raised)] pl-8 pr-7 py-1.5 font-medium shadow-sm transition hover:border-[var(--color-accent-fill)] cursor-pointer text-[var(--color-text-primary)]"
       >
         {SUPPORTED_LOCALES.map((loc) => {
           const m = LOCALE_META[loc];

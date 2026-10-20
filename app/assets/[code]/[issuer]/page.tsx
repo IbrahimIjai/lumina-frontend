@@ -7,6 +7,7 @@ import { formatSupply } from "@/components/AssetBrowser";
 import { gqlFetch, GRAPHQL_URL } from "@/lib/graphql";
 import { truncateAddress } from "@/lib/formatters";
 import { routeMetadata } from "@/lib/metadata";
+import { SITE_NAME } from "@/lib/site";
 import type { TypedDocumentString } from "@/lib/generated/graphql";
 
 const BUCKET_SECONDS = 86_400;
@@ -83,6 +84,8 @@ export function generateMetadata({
       path: `/assets/${encodeURIComponent(assetCode)}/${encodeURIComponent(assetIssuer)}`,
       label,
       description: `Asset ${assetCode} issued by ${assetIssuer}: current supply, holder count, and transfer volume.`,
+      image: `/assets/${encodeURIComponent(assetCode)}/${encodeURIComponent(assetIssuer)}/opengraph-image`,
+      imageAlt: `${label} on ${SITE_NAME}`,
     });
   });
 }

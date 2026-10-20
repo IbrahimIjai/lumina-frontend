@@ -3,6 +3,7 @@ import { TransactionDetailDocument as TRANSACTION_QUERY } from "@/lib/generated/
 import Link from "next/link";
 import { gqlFetch, GRAPHQL_URL } from "@/lib/graphql";
 import { routeMetadata } from "@/lib/metadata";
+import { SITE_NAME } from "@/lib/site";
 import {
   formatOperationType,
   formatXLM,
@@ -34,6 +35,8 @@ export function generateMetadata({
       label: `Transaction ${short}`,
       description: `Stellar transaction ${hash}: status, fee, memo and operations, indexed on Lumina.`,
       path: `/transactions/${hash}`,
+      image: `/transactions/${hash}/opengraph-image`,
+      imageAlt: `Transaction ${short} on ${SITE_NAME}`,
     });
   });
 }

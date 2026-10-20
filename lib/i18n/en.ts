@@ -160,6 +160,10 @@ const en: MessageCatalogue = {
   "owner.deactivated": "Deactivated",
   "owner.staking": "Staking\u2026",
   "owner.stake": "Stake",
+  "owner.stakeAnyway": "Stake anyway",
+  "owner.reserveWarningTitle": "This stake would take your account below its minimum balance.",
+  "owner.reserveExplanation":
+    "Stellar keeps a minimum amount of XLM in every account, called the reserve. It is 1 XLM for an account with nothing else in it, plus 0.5 XLM for each trustline, offer or other entry it owns, and that part cannot be spent. After this stake your account would hold {remaining} XLM, below the {minimum} XLM reserve. An account under its reserve can still receive XLM but cannot send transactions until it is topped up.",
   "owner.withdrawing": "Withdrawing\u2026",
   "owner.withdrawStake": "Withdraw stake",
   "owner.stakeAmountLabel": "Stake amount for {name}",

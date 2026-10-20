@@ -139,6 +139,9 @@ export interface MessageCatalogue {
   "owner.deactivated": string;
   "owner.staking": string;
   "owner.stake": string;
+  "owner.stakeAnyway": string;
+  "owner.reserveWarningTitle": string;
+  "owner.reserveExplanation": string;
   "owner.withdrawing": string;
   "owner.withdrawStake": string;
   "owner.stakeAmountLabel": string;

@@ -149,6 +149,10 @@ const de: MessageCatalogue = {
   "owner.deactivated": "Deaktiviert",
   "owner.staking": "Staking\u2026",
   "owner.stake": "Staken",
+  "owner.stakeAnyway": "Trotzdem staken",
+  "owner.reserveWarningTitle": "Dieses Staking würde dein Konto unter sein Mindestguthaben bringen.",
+  "owner.reserveExplanation":
+    "Stellar hält in jedem Konto ein Mindestguthaben in XLM, die Reserve. Sie beträgt 1 XLM für ein Konto ohne weitere Einträge, plus 0,5 XLM für jede Trustline, jedes Angebot oder anderen Eintrag, den es besitzt. Dieser Teil kann nicht ausgegeben werden. Nach diesem Staking hätte dein Konto {remaining} XLM, unter der Reserve von {minimum} XLM. Ein Konto unter seiner Reserve kann weiterhin XLM empfangen, aber keine Transaktionen senden, bis es wieder aufgefüllt wurde.",
   "owner.withdrawing": "Abheben\u2026",
   "owner.withdrawStake": "Einsatz abheben",
   "owner.stakeAmountLabel": "Einsatzbetrag für {name}",

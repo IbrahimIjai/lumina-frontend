@@ -62,6 +62,7 @@ function renderDashboard(
         currentLedger: 100,
       })}
       deactivate={async () => {}}
+      loadBalance={async () => ({ balance: BigInt(100_000_000_000), subentryCount: 0 })}
       {...props}
     />,
   );
@@ -114,6 +115,24 @@ describe("OwnerContracts", () => {
 
     await screen.findByText("My Protocol");
     expect(loadContracts).toHaveBeenCalledTimes(2);
+  });
+
+  it("hides owner controls for an entry the connected wallet does not own", async () => {
+    // The query is owner-scoped, so this only happens if that scoping ever
+    // changes. The component must not depend on it.
+    const stake = vi.fn(async () => {});
+    renderDashboard({
+      loadContracts: async () => [entry({ owner: 'GSOMEONEELSEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' })],
+      stake,
+    });
+
+    await screen.findByText("My Protocol");
+    expect(screen.queryByRole("button", { name: /^deactivate$/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^stake$/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /withdraw stake/i })).toBeNull();
+    expect(screen.queryByLabelText(/stake amount for my protocol/i)).toBeNull();
+    // The entry itself still shows, read-only.
+    expect(screen.getByText("Active")).toBeTruthy();
   });
 
   it("shows deactivated entries too, not just active ones", async () => {
@@ -298,6 +317,51 @@ describe("OwnerContracts", () => {
     await waitFor(() =>
       expect(stake).toHaveBeenCalledWith(C1, OWNER, BigInt(250), expect.any(Function)),
     );
+  });
+
+  it("holds a stake that would breach the reserve until the owner confirms", async () => {
+    const stake = vi.fn(async () => {});
+    renderDashboard({
+      stake,
+      // 1 XLM balance with nothing else owned: the 1 XLM reserve leaves no room.
+      loadBalance: async () => ({ balance: BigInt(10_000_000), subentryCount: 0 }),
+    });
+
+    await screen.findByText("My Protocol");
+    await userEvent.type(
+      screen.getByLabelText(/stake amount for my protocol/i),
+      "10000000",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^stake$/i }));
+
+    expect(
+      (await screen.findByText(/below its minimum balance/i)).textContent,
+    ).toBeTruthy();
+    expect(stake).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole("button", { name: /stake anyway/i }));
+    await waitFor(() =>
+      expect(stake).toHaveBeenCalledWith(C1, OWNER, BigInt(10_000_000), expect.any(Function)),
+    );
+  });
+
+  it("does not hold a stake when the balance cannot be read", async () => {
+    const stake = vi.fn(async () => {});
+    renderDashboard({
+      stake,
+      loadBalance: async () => {
+        throw new Error("indexer down");
+      },
+    });
+
+    await screen.findByText("My Protocol");
+    await userEvent.type(
+      screen.getByLabelText(/stake amount for my protocol/i),
+      "250",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^stake$/i }));
+
+    await waitFor(() => expect(stake).toHaveBeenCalled());
   });
 
   it("rejects a stake amount that is not a positive whole number", async () => {

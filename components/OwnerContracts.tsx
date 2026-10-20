@@ -1,6 +1,9 @@
 "use client";
 
-import { OwnerContractEventsDocument as EVENTS_QUERY } from "@/lib/generated/graphql";
+import {
+  AccountDetailDocument as ACCOUNT_QUERY,
+  OwnerContractEventsDocument as EVENTS_QUERY,
+} from "@/lib/generated/graphql";
 
 /**
  * "My Contracts" — everything the connected wallet has registered, with a real
@@ -47,6 +50,11 @@ import {
 } from '@/lib/contractActivity';
 import type { ContractEvent } from '@/lib/types';
 import { formatStroops } from '@/lib/formatters';
+import {
+  checkReserve,
+  WORST_CASE_FEE_STROOPS,
+  type ReserveCheck,
+} from '@/lib/reserve';
 import TimeAgo from './TimeAgo';
 import { LifetimeSlashedBadge, StakeBadge, VerifiedBadge } from './RegistryBadges';
 import BackendUnavailable from './BackendUnavailable';
@@ -81,6 +89,8 @@ export interface OwnerContractsProps {
   deactivate?: (contractId: string, owner: string, onFeeEstimated?: (fee: string) => void) => Promise<{ hash: string } | void>;
   stake?: (contractId: string, owner: string, amount: bigint, onFeeEstimated?: (fee: string) => void) => Promise<{ hash: string } | void>;
   withdraw?: (contractId: string, owner: string, onFeeEstimated?: (fee: string) => void) => Promise<{ hash: string } | void>;
+  /** The wallet's native balance and how many ledger entries it owns, for the reserve check. */
+  loadBalance?: (address: string) => Promise<{ balance: bigint; subentryCount: number }>;
   /** Notifies the parent so the global list can refresh after a change. */
   onChanged?: () => void;
 }
@@ -94,6 +104,16 @@ const defaultLoadActivity = (contractIds: string[], signal?: AbortSignal) =>
   probeContractActivity(contractIds, (id) => fetchEvents(id, 1, signal));
 
 const defaultLoadStake = (contractId: string) => getStakeInfo(contractId);
+
+const defaultLoadBalance = async (address: string) => {
+  const data = await gqlFetch(PUBLIC_GRAPHQL_URL, ACCOUNT_QUERY, { address });
+  const native = data.account?.balances.find((b) => b.assetType === "native");
+  return {
+    // Horizon reports native balances as decimal XLM; the contract works in stroops.
+    balance: BigInt(Math.round(parseFloat(native?.balance ?? "0") * 10_000_000)),
+    subentryCount: data.account?.subentryCount ?? 0,
+  };
+};
 
 async function callRegistry(
   owner: string,
@@ -188,6 +208,7 @@ export default function OwnerContracts({
   deactivate = defaultDeactivate,
   stake = defaultStake,
   withdraw = defaultWithdraw,
+  loadBalance = defaultLoadBalance,
   onChanged,
 }: OwnerContractsProps) {
   const [entries, setEntries] = useState<RegistryEntry[]>([]);
@@ -203,6 +224,7 @@ export default function OwnerContracts({
     {},
   );
   const [slashErrors, setSlashErrors] = useState<Record<string, string>>({});
+  const [reserveWarning, setReserveWarning] = useState<Record<string, ReserveCheck>>({});
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -373,7 +395,7 @@ export default function OwnerContracts({
     }
   }
 
-  async function handleStake(entry: RegistryEntry) {
+  async function handleStake(entry: RegistryEntry, acknowledged = false) {
     const raw = (stakeInput[entry.contractId] ?? "").trim();
     if (!/^\d+$/.test(raw) || BigInt(raw) <= BigInt(0)) {
       setRowError((prev) => ({
@@ -382,6 +404,24 @@ export default function OwnerContracts({
       }));
       return;
     }
+    if (!acknowledged) {
+      // A failed balance read does not block the stake: the network still has
+      // the final word, so this only holds the stake back when it can see a breach.
+      const reserve = await loadBalance(walletAddress)
+        .then(({ balance, subentryCount }) =>
+          checkReserve(balance, subentryCount, BigInt(raw) + WORST_CASE_FEE_STROOPS),
+        )
+        .catch(() => null);
+      if (reserve?.breaches) {
+        setReserveWarning((prev) => ({ ...prev, [entry.contractId]: reserve }));
+        return;
+      }
+    }
+    setReserveWarning((prev) => {
+      const next = { ...prev };
+      delete next[entry.contractId];
+      return next;
+    });
     await runRowAction(
       entry,
       "stake",
@@ -473,6 +513,10 @@ export default function OwnerContracts({
         const isOpen = expanded === entry.contractId;
         const info = stakeInfo[entry.contractId];
         const blockers = withdrawBlockers(entry, info);
+        // The query is owner-scoped, but that is not what keeps these controls
+        // from another wallet's entry: the entry itself has to name the
+        // connected wallet, or the controls are not rendered at all.
+        const isOwner = entry.owner === walletAddress;
 
         return (
           <div
@@ -503,7 +547,7 @@ export default function OwnerContracts({
                 </p>
               </div>
 
-              {entry.active && (
+              {entry.active && isOwner && (
                 <button
                   onClick={() => handleDeactivate(entry)}
                   disabled={isPending}
@@ -523,6 +567,7 @@ export default function OwnerContracts({
                   {info ? info.stake.toString() : "—"}
                 </span>
               </p>
+              {isOwner && (
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   inputMode="numeric"
@@ -563,7 +608,48 @@ export default function OwnerContracts({
                   ))}
                 </ul>
               )}
+              )}
             </div>
+
+            {isOwner && reserveWarning[entry.contractId] && (
+              <div
+                role="alert"
+                className="mt-3 text-xs text-[var(--color-warning-text)] bg-[var(--color-warning-bg)] rounded-lg px-3 py-2 flex flex-col gap-2"
+              >
+                <p className="font-bold">{t("owner.reserveWarningTitle")}</p>
+                <p>
+                  {t("owner.reserveExplanation", {
+                    remaining: formatStroops(
+                      reserveWarning[entry.contractId].remaining > BigInt(0)
+                        ? reserveWarning[entry.contractId].remaining
+                        : BigInt(0),
+                    ),
+                    minimum: formatStroops(reserveWarning[entry.contractId].minimum),
+                  })}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleStake(entry, true)}
+                    disabled={pendingId !== null}
+                    className="border border-[var(--color-border-default)] font-bold text-xs px-3 py-2 rounded-lg disabled:opacity-50"
+                  >
+                    {t("owner.stakeAnyway")}
+                  </button>
+                  <button
+                    onClick={() =>
+                      setReserveWarning((prev) => {
+                        const next = { ...prev };
+                        delete next[entry.contractId];
+                        return next;
+                      })
+                    }
+                    className="font-bold text-xs px-3 py-2 rounded-lg"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {rowError[entry.contractId] && (
               <div

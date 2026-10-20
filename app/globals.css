@@ -208,9 +208,17 @@ a {
   text-underline-offset: 3px;
 }
 
+/* Every interactive element gets the same ring. Selects, links, tabs and
+   summaries were missing from this list, so filters and tab rows showed no
+   focus at all. Components must not remove this outline without a replacement. */
 input:focus-visible,
 textarea:focus-visible,
-button:focus-visible {
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible {
   outline: 2px solid var(--color-accent-fill);
   outline-offset: 2px;
 }
