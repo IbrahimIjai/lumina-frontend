@@ -27,7 +27,12 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
           return (
             <li key={index} className="flex items-center gap-2">
               {isLast ? (
-                <span className="text-[var(--color-text-primary)] font-medium">{item.label}</span>
+                <span
+                  aria-current="page"
+                  className="text-[var(--color-text-primary)] font-medium"
+                >
+                  {item.label}
+                </span>
               ) : (
                 <>
                   <Link

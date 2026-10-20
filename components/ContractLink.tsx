@@ -21,7 +21,8 @@ export default function ContractLink({
   return (
     <Link
       href={`/contracts/${contractId}`}
-      className={`text-[var(--color-accent-text)] hover:underline mono ${className}`}
+      aria-label={`Contract ${contractId}`}
+      className={`text-[var(--color-accent-text)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-fill)] mono ${className}`}
       title={contractId}
     >
       {displayText}

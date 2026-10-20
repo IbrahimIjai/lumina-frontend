@@ -79,7 +79,7 @@ function isAllZero(series: AssetVolumeQuery["asset"]["series"]): boolean {
 function ChartSkeleton({ height = 280 }: { height?: number }) {
   return (
     <div
-      className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] animate-pulse"
+      className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] animate-pulse motion-reduce:animate-none"
       style={{ height }}
       aria-hidden="true"
     />
@@ -147,6 +147,7 @@ export default function AccountPortfolio({ balances }: AccountPortfolioProps) {
 
   // ── Pill tab list ────────────────────────────────────────────────────────
 
+  const assetGroupId = "portfolio-asset-group";
   const visible = showAll ? sorted : sorted.slice(0, MAX_VISIBLE);
   const overflowCount = sorted.length - MAX_VISIBLE;
   const hasOverflow = sorted.length > MAX_VISIBLE;
@@ -211,24 +212,31 @@ export default function AccountPortfolio({ balances }: AccountPortfolioProps) {
         Portfolio Activity
       </h2>
 
-      {/* Asset selector pill row */}
-      <div className="flex flex-wrap items-center gap-2 mb-4" role="tablist" aria-label="Select asset to view">
+      {/* Asset selector pill row. These are toggle buttons, not ARIA tabs: they
+          switch the chart below, with no tabpanel and no arrow-key model, so
+          Tab + Enter/Space is the whole keyboard interaction. */}
+      <div
+        id={assetGroupId}
+        className="flex flex-wrap items-center gap-2 mb-4"
+        role="group"
+        aria-label="Select asset to view"
+      >
         {visible.map((b) => {
           const key = assetKey(b);
           const isActive = assetKey(selected) === key;
           return (
             <button
               key={key}
-              role="tab"
-              aria-selected={isActive}
+              type="button"
+              aria-pressed={isActive}
               onClick={() => {
                 setSelected(b);
                 setFetchState({ status: "idle" });
               }}
               className={[
-                "text-[12px] font-semibold rounded-full px-3 py-1 border transition-colors",
+                "text-[12px] font-semibold rounded-full px-3 py-1 border transition-colors motion-reduce:transition-none",
                 isActive
-                  ? "bg-[var(--color-accent-surface)] text-[var(--color-accent-text)] border-[var(--color-accent-9)]"
+                  ? "bg-[var(--color-accent-surface)] text-[var(--color-accent-text)] border-[var(--color-accent-fill)]"
                   : "bg-transparent text-[var(--color-text-secondary)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]",
               ].join(" ")}
             >
@@ -239,13 +247,21 @@ export default function AccountPortfolio({ balances }: AccountPortfolioProps) {
 
         {hasOverflow && (
           <button
+            type="button"
+            aria-expanded={showAll}
+            aria-controls={assetGroupId}
             onClick={() => setShowAll((v) => !v)}
-            className="text-[12px] font-semibold rounded-full px-3 py-1 border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
+            className="text-[12px] font-semibold rounded-full px-3 py-1 border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors motion-reduce:transition-none"
           >
             {showAll ? "Show less" : `+${overflowCount} more`}
           </button>
         )}
       </div>
+
+      {/* Loading is silent on screen without this; the skeleton is aria-hidden. */}
+      <p role="status" className="sr-only">
+        {fetchState.status === "loading" ? "Loading transfer volume" : ""}
+      </p>
 
       {/* Chart panel */}
       {chartContent}

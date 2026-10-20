@@ -243,8 +243,8 @@ export default function LiveFeed() {
               type="button"
               onClick={paused ? resumeFeed : pauseFeed}
               aria-label={pauseLabel}
-              aria-pressed={paused || undefined}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors px-1.5 py-1 rounded"
+              aria-pressed={paused}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-fill)]"
             >
               {paused ? <Play size={12} /> : <Pause size={12} />}
             </button>
@@ -327,7 +327,7 @@ export default function LiveFeed() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Transaction ${truncateAddress(tx.hash, 5)}, ${tx.successful ? "successful" : "failed"}`}
-                    className="mono text-xs text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] hover:underline transition-colors"
+                    className="mono text-xs text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] hover:underline motion-safe:transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-fill)]"
                   >
                     {truncateAddress(tx.hash, 5)}
                   </a>

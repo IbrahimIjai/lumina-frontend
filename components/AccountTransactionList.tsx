@@ -106,7 +106,7 @@ export default function AccountTransactionList({
         aria-label="Account transactions"
         aria-busy={loading || undefined}
         tabIndex={0}
-        className="rounded-xl border border-[var(--color-border-default)] overflow-x-auto"
+        className="rounded-xl border border-[var(--color-border-default)] overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-fill)]"
       >
         <table className="w-full text-sm border-collapse">
           <caption className="sr-only">Account transactions</caption>
@@ -129,9 +129,10 @@ export default function AccountTransactionList({
                     href={`https://stellar.expert/explorer/public/tx/${tx.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mono text-xs text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] hover:underline transition-colors"
+                    className="mono text-xs text-[var(--color-accent-text)] hover:text-[var(--color-accent-text-hover)] hover:underline transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-fill)]"
                   >
                     {truncateAddress(tx.hash, 6)}
+                    <span className="sr-only"> on stellar.expert (opens in new tab)</span>
                   </a>
                 </td>
                 <td className="py-2.5 px-3 mono text-xs">
